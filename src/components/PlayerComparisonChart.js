@@ -37,7 +37,7 @@ const PlayerCompareisonChart = () => {
     if (data.length === 0) return;
 
     // set the dimensions and margins of the graph
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 },
+    const margin = { top: 30, right: 40, bottom: 50, left: 60 },
       width = 960 - margin.left - margin.right,
       height = 500 - margin.top - margin.bottom;
 
@@ -118,6 +118,16 @@ const PlayerCompareisonChart = () => {
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x));
 
+    // add the x Axis label
+    svg
+      .append("text")
+      .attr(
+        "transform",
+        "translate(" + width / 2 + "," + (height + margin.bottom / 1.5) + ")"
+      )
+      .style("text-anchor", "middle")
+      .text("Player");
+
     // add the y Axis
     svg.append("g").call(d3.axisLeft(y));
 
@@ -131,6 +141,16 @@ const PlayerCompareisonChart = () => {
       .enter()
       .append("g")
       .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+
+    // add the y Axis label
+    svg
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x", 0 - height / 2)
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Number of goals");
 
     legend
       .append("rect")
