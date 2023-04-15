@@ -49,6 +49,8 @@ const PlayerCompareisonChart = () => {
     // appends a 'group' element to 'svg'
     // moves the 'group' element to the top left margin
     d3.select("#chart").select("svg").remove();
+    const tooltip = d3.select("#tooltip");
+
     const svg = d3
       .select("#chart")
       .append("svg")
@@ -60,6 +62,38 @@ const PlayerCompareisonChart = () => {
     // Scale the range of the data in the domains
     x.domain(data.map((d) => d.name));
     y.domain([0, d3.max(data, (d) => d.goals)]);
+
+    svg
+      .selectAll(".bar")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", (d) => x(d.name))
+      .attr("width", x.bandwidth())
+      .attr("y", (d) => y(0))
+      .attr("height", 0)
+      .style("fill", (d) => (d.name === "Messi" ? "blue" : "red"))
+      .on("mouseenter", (event, d) => {
+        tooltip
+          .style("opacity", 1)
+          .html(`Goals: ${d.goals}`)
+          .style("background-color", d.name === "Messi" ? "blue" : "red")
+          .style("color", "white")
+          .style("padding", "4px");
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", event.pageX + "px")
+          .style("top", event.pageY - 28 + "px");
+      })
+      .on("mouseleave", () => {
+        tooltip.style("opacity", 0);
+      })
+      .transition()
+      .duration(1000)
+      .attr("y", (d) => y(d.goals))
+      .attr("height", (d) => height - y(d.goals));
 
     // append the rectangles for the bar chart
     svg
@@ -113,7 +147,12 @@ const PlayerCompareisonChart = () => {
       .text((d) => `Goals for ${d.name}`);
   }, [data]);
 
-  return <div id="chart"></div>;
+  return (
+    <div>
+      <div id="chart"></div>
+      <div id="tooltip" style={{ opacity: 0, position: "absolute" }}></div>
+    </div>
+  );
 };
 
 export default PlayerCompareisonChart;
