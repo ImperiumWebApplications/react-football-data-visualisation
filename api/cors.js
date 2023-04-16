@@ -5,7 +5,11 @@ const corsMiddleware = cors();
 
 module.exports = (req, res) => {
   corsMiddleware(req, res, () => {
-    let url = req.url.slice(1);
+    let { url } = req.query;
+    if (!url) {
+      res.status(400).send("URL parameter is required.");
+      return;
+    }
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       url = "http://" + url;
     }
