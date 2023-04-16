@@ -9,7 +9,7 @@ const PlayerCompareisonChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       const result = await axios.get(
-        "https://trueimperium.com/https://www.messivsronaldo.app/"
+        "https://react-football-data-visualisation.vercel.app/api/cors/https://www.messivsronaldo.app/"
       );
       const $ = cheerio.load(result.data);
       const messiGoals = parseInt(
