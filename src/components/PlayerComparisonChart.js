@@ -5,6 +5,8 @@ import * as d3 from "d3";
 
 const PlayerComparisonChart = () => {
   const [data, setData] = useState([]);
+  const [messiGoals, setMessiGoals] = useState([]);
+  const [ronaldoGoals, setRonaldoGoals] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,7 +73,8 @@ const PlayerComparisonChart = () => {
     if (data.length === 0) return;
     renderHistogram(data);
     renderHorizontalHistogram(data);
-  }, [data]);
+    renderLineGraph(messiGoals, ronaldoGoals);
+  }, [data, messiGoals, ronaldoGoals]);
 
   const renderHistogram = (data) => {
     // set the dimensions and margins of the graph
@@ -240,10 +243,124 @@ const PlayerComparisonChart = () => {
       .text("Value");
   };
 
+  const fetchGoalsData = async (url) => {
+    const result = await axios.get(`/api/cors?url=${url}`);
+    const $ = cheerio.load(result.data);
+    const goals = $(".MatchHistory-module--totalsVal--1tQXf")
+      .first()
+      .text()
+      .replace(/\,/g, "")
+      .split(" ")
+      .map((goal) => parseInt(goal));
+    return goals;
+  };
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      const messiGoalsData = await fetchGoalsData(
+        "https://www.messivsronaldo.app/match-histories/messi-match-history/"
+      );
+      const ronaldoGoalsData = await fetchGoalsData(
+        "https://www.messivsronaldo.app/match-histories/ronaldo-match-history/"
+      );
+      console.log(messiGoalsData, ronaldoGoalsData);
+      setMessiGoals(messiGoalsData);
+      setRonaldoGoals(ronaldoGoalsData);
+    };
+    fetchGoals();
+  }, []);
+
+  const renderLineGraph = (messiGoals, ronaldoGoals) => {
+    const margin = { top: 30, right: 40, bottom: 50, left: 60 },
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+    const x = d3
+      .scaleLinear()
+      .domain([0, 100]) // Change the domain to [0, 100]
+      .range([0, width]);
+    const y = d3
+      .scaleLinear()
+      .domain([0, d3.max(messiGoals.concat(ronaldoGoals))])
+      .range([height, 0]);
+
+    d3.select("#line-chart").select("svg").remove();
+
+    const svg = d3
+      .select("#line-chart")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    const line = d3
+      .line()
+      .x((_, i) => x(i))
+      .y((d) => y(d));
+
+    const createLine = (data, color) => {
+      svg
+        .append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
+    };
+
+    // Calculate the number of goals scored per 1% of their matches
+    const messiGoalsPerSegment = messiGoals[0] / 100;
+    const ronaldoGoalsPerSegment = ronaldoGoals[0] / 100;
+
+    // Generate data for both players with 100 equal parts
+    const messiData = Array.from(
+      { length: 100 },
+      (_, i) => (i + 1) * messiGoalsPerSegment
+    );
+    const ronaldoData = Array.from(
+      { length: 100 },
+      (_, i) => (i + 1) * ronaldoGoalsPerSegment
+    );
+
+    createLine(messiData, "blue");
+    createLine(ronaldoData, "red");
+
+    // Add the x Axis
+    svg
+      .append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+    // Add the x Axis label
+    svg
+      .append("text")
+      .attr(
+        "transform",
+        "translate(" + width / 2 + "," + (height + margin.bottom / 1.5) + ")"
+      )
+      .style("text-anchor", "middle")
+      .text("Number of Matches");
+
+    // Add the y Axis
+    svg.append("g").call(d3.axisLeft(y));
+
+    // Add the y Axis label
+    svg
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x", 0 - height / 2)
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Total Number of Goals");
+  };
+
   return (
     <div>
       <div id="chart"></div>
       <div id="horizontal-chart"></div>
+      <div id="line-chart"></div>
     </div>
   );
 };
